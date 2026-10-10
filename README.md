@@ -1,37 +1,44 @@
 <div align="center">
   <img src="assets/icon.png" width="72" />
   <h1>Canvas</h1>
-  <p>A light, floating UI toolkit for Roblox Studio.</p>
+  <p>A small UI toolkit that floats over the Roblox Studio viewport.</p>
 </div>
 
-Canvas isn't a docked widget. It's a small bar over the viewport that shows up when you select UI and hides when you don't. Click a tool and the bar grows into that tool's panel. Click it again, or press Esc, and it shrinks back.
+Canvas doesn't live in a dock. Select a Frame, TextLabel or any other UI and a small window appears over the viewport. Deselect it and the window goes away. Click a tool and the window grows into that tool's panel. Click the tool again, or press Esc, to shrink it back.
 
-Drag the header (Classic) or the **::** grip (Modern) to move it. When you let go it springs to the nearest corner or edge, and it always stays on screen. Panels open away from the edge, so a bar at the bottom opens upward.
+To move the window, drag its header, or the **::** grip in the Modern theme. When you let go, it springs to the nearest corner or edge and stays fully on screen. Panels open away from the edge, so a window parked at the bottom grows upward.
 
 ## Tools
 
-- **Builder Icons** lists every icon in Roblox's built-in Builder Icons font, with search and Regular or Filled styles. Clicking an icon adds it to the selected TextLabels, TextButtons or TextBoxes as RichText, so icons and text can share a label. **In text** chooses whether the icon swaps the label's existing icon, or is added at the start or the end. With no text object selected, it inserts a new icon label into the selection. The name field shows the icon's name so you can copy it for scripts.
-- **Scale ↔ Offset** converts Position, Size or both to Scale or to Offset, on X, Y or both, without moving anything. It accounts for the parent's UIPadding and any UIScale.
-- **Layout** adds or removes UICorner, UIStroke, UIPadding, UIListLayout, UIGridLayout and UIAspectRatioConstraint in one click. It also sets AnchorPoint without moving the object, and has center, fill and AutomaticSize shortcuts.
-- **Reclass** turns the selection into another class, like a TextLabel into an ImageLabel. Type a class name for autocomplete; Tab completes and Enter reclasses. Every suggestion shows its Explorer icon and how many properties carry over. The new instance keeps the shared properties, children, attributes and tags. References to it, like ObjectValues or NextSelection properties in the same ScreenGui or model, point to the new instance. Scripts keep their source.
-- **Color & Style** sets fill, text or image, and stroke colors from swatches or a hex code. It can also copy one object's style (fill, corner, stroke and text) and paste it onto others.
+**Builder Icons.** Every icon in the Builder Icons font that ships with Studio, with search and a Regular or Filled style. Clicking an icon adds it to the selected TextLabels, TextButtons and TextBoxes as RichText, so one label can hold an icon and text, like a gear next to "Settings". The **In text** option decides where it goes. Swap icon replaces the icons already in the label, or adds one at the start if there aren't any. The other two options add at the start or the end. With no text object selected, the click inserts a new icon label instead. The name field shows the icon's name, ready to copy into a script.
 
-Every edit can be undone with Ctrl+Z. The toolbar button turns Canvas on or off.
+**Scale ↔ Offset.** Converts Position, Size or both to Scale or to Offset, on one axis or both. Nothing moves on screen. The math takes the parent's UIPadding and any UIScale into account.
+
+**Layout.** One click adds UICorner, UIStroke, UIPadding, UIListLayout, UIGridLayout or UIAspectRatioConstraint, and a second click removes it. The anchor picker changes AnchorPoint and adjusts Position so the object stays put. There are also buttons to center in the parent, fill the parent and toggle AutomaticSize.
+
+**Reclass.** Turns the selection into another class, like a TextLabel into an ImageLabel. Type part of a class name and pick from the list. Tab completes the highlighted class and Enter converts. Each row shows the class's Explorer icon and how many properties survive the switch. Below the list, Canvas names the properties that will be dropped.
+
+The new instance keeps every saved property both classes share, plus its name, children, attributes and tags. Scripts keep their source. ObjectValues, NextSelection properties and constraint parts that pointed at the old instance get repointed, but only inside the same ScreenGui or model. To reclass Parts or Scripts, set **Show** to Always first, since the window hides when no UI is selected.
+
+**Color & Style.** Sets the fill, the text or image color, or the stroke color from swatches or a hex code. It also copies one object's fill, corner, stroke and text style and pastes it onto others.
+
+Ctrl+Z undoes any of these edits. The toolbar button turns Canvas on and off.
 
 ## Settings
 
-The cog opens Settings:
+The cog opens Settings. **Theme** picks Classic, the default, or Modern. Classic copies Photon: a header with the logo, title and tab buttons, square corners, and you drag it by the header. Modern is a compact rounded bar with a **::** grip.
 
-- **Theme:** Classic (the default) follows Photon's look, with a header holding the logo, title and tab buttons, and square edges. You drag it by the header. Modern is the compact rounded island with a **::** grip.
-- **Show:** only while UI is selected, or always.
-- **Motion:** bouncy, smooth, or no animation.
-- **Placement:** snap to corners and edges, or stay wherever you drop it.
-- **Size:** 90% to 125%.
-- **Tooltips:** on or off.
-- **On deselect:** close the open panel when nothing is selected, or keep it open.
-- **Icon size:** the size of icon labels inserted from Builder Icons.
+The other settings:
 
-Settings also has buttons to reset the window's position and to reset all settings.
+- **Show** the window only while UI is selected, or always.
+- **Motion** can be bouncy, smooth or off.
+- **Placement** snaps to corners and edges, or leaves the window wherever you drop it.
+- **Size** scales the window from 90% to 125%.
+- **Tooltips** turns button labels on hover on or off.
+- **On deselect** closes the open panel when you deselect everything, or keeps it open.
+- **Icon size** sets the size of icon labels that Builder Icons inserts.
+
+Two buttons at the bottom reset the window's position and reset every setting.
 
 ## Development
 
@@ -45,14 +52,14 @@ wally install
 ./scripts/dev.bash    # rebuilds Canvas-dev.rbxm into your Plugins folder when files change
 ```
 
-Dev builds put the island's state in `shared.CanvasDev`, so you can open a panel from the command bar with `shared.CanvasDev.active("icons")` or move the bar with `shared.CanvasDev.slot("TopRight")`.
+Dev builds expose the window's state as `shared.CanvasDev`. From the command bar, `shared.CanvasDev.active("icons")` opens a panel and `shared.CanvasDev.slot("TopRight")` moves the window.
 
-`./scripts/build.bash` also writes `build/studio-install.luau`. Running it rebuilds the plugin as `workspace.Canvas`, and so does `build/studio-install-2.luau` and so on if the sources needed more than one chunk. Use it through the Studio MCP or the command bar. `build/studio-install.json` holds the same tree as JSON.
+The build also writes `build/studio-install.luau`. Run it through the Studio MCP or the command bar and it rebuilds the plugin as `workspace.Canvas`. Large builds split into `studio-install-2.luau` and so on, which you run in order. `build/studio-install.json` holds the same tree as JSON.
 
-When Studio updates, run `python3 scripts/generate-builder-icons.py` to pick up new Builder Icons. It reads Studio's bundled BuilderIcons package and rewrites `src/BuilderIcons/Names.luau`.
+After a Studio update, run `python3 scripts/generate-builder-icons.py` to pick up new icons. It reads the BuilderIcons package bundled with Studio and rewrites `src/BuilderIcons/Names.luau`.
 
-See [RELEASING.md](RELEASING.md) for publishing steps.
+[RELEASING.md](RELEASING.md) has the publishing steps.
 
 ## License
 
-MIT © Twisted Signal. Lucide icons use the [ISC license](third_party/lucide-LICENSE). Builder Icons ship with Roblox Studio and are not included in this repository.
+MIT © Twisted Signal. Lucide icons use the [ISC license](third_party/lucide-LICENSE). Builder Icons ship with Roblox Studio, so this repository doesn't include them.
