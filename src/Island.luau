@@ -469,7 +469,10 @@ const function Island(props: Props): CanvasGroup
 		end
 	end))
 
-	local lastScale = -1
+	-- what render last wrote, so it only touches instances when something changed. comparing
+	-- against this, rather than asking whether the springs moved, also covers Motion: Off, where
+	-- every spring jumps to its goal and never reports movement.
+	local applied: { [string]: any } = {}
 	const function render(dt: number)
 		if settings.get("motion") == "off" then
 			-- no animation: jump straight to every goal, except while following the cursor.
@@ -480,37 +483,56 @@ const function Island(props: Props): CanvasGroup
 			shown:snap(shown.goal)
 			fade:snap(fade.goal)
 		end
-		const k = scale()
-		const moving = position:step(dt)
-		const resizing = size:step(dt)
-		const showing = shown:step(dt)
+		position:step(dt)
+		size:step(dt)
+		shown:step(dt)
 		const fading = fade:step(dt)
-		if
-			not (moving or resizing or showing or fading)
-			and island.Visible == (shown.goal.X > 0)
-			and k == lastScale
-		then
-			return
+		const opacity = math.clamp(fade.position.X, 0, 1)
+		if panel and not active() and not fading and opacity < 0.01 then
+			removePanel()
 		end
-		lastScale = k
+
+		const k = scale()
 		const a = anchor()
 		const s = size.position
 		const p = position.position
-		const visibility = math.clamp(shown.position.X, 0, 1)
+		const visible = shown.position.X
+		if
+			applied.k == k
+			and applied.a == a
+			and applied.s == s
+			and applied.p == p
+			and applied.visible == visible
+			and applied.goal == shown.goal.X
+			and applied.panel == panel
+			and applied.opacity == opacity
+			and applied.bottom == headerAtBottom()
+		then
+			return
+		end
+		applied = {
+			k = k,
+			a = a,
+			s = s,
+			p = p,
+			visible = visible,
+			goal = shown.goal.X,
+			panel = panel,
+			opacity = opacity,
+			bottom = headerAtBottom(),
+		}
+
+		const visibility = math.clamp(visible, 0, 1)
 		island.AnchorPoint = a
 		island.Position = UDim2.fromOffset(math.round(p.X + a.X * s.X * k), math.round(p.Y + a.Y * s.Y * k))
 		island.Size = UDim2.fromOffset(math.round(s.X), math.round(s.Y))
 		island.GroupTransparency = 1 - visibility
 		island.Visible = visibility > 0.01 or shown.goal.X > 0
-		uiScale.Scale = k * (0.9 + 0.1 * shown.position.X)
+		uiScale.Scale = k * (0.9 + 0.1 * visible)
 		if panel and panelContent then
-			const opacity = math.clamp(fade.position.X, 0, 1)
 			panel.GroupTransparency = 1 - opacity
 			const direction = if headerAtBottom() then 1 else -1
 			panelContent.Position = UDim2.fromOffset(0, math.round((1 - opacity) * 10 * direction))
-			if not active() and not fading and opacity < 0.01 then
-				removePanel()
-			end
 		end
 	end
 	cleanup(RunService.Heartbeat:Connect(render))
