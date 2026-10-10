@@ -449,7 +449,7 @@ const function Island(props: Props): CanvasGroup
 		pointerAt = 0
 	end))
 	props.context.selection.setGuard(function()
-		if dragging then
+		if dragging or Overlay.hasPopup() then
 			return true
 		end
 		if not island.Visible then

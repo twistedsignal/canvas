@@ -10,6 +10,8 @@ const Button = require("../components/Button")
 const Segmented = require("../components/Segmented")
 const TextInput = require("../components/TextInput")
 const Layout = require("../components/Layout")
+const Overlay = require("../Overlay")
+const ColorPicker = require("../components/ColorPicker")
 
 const new = vide.create
 const source = vide.source
@@ -156,6 +158,32 @@ const function ColorPanel(context: Tool.Context): GuiObject
 		end)
 	end
 
+	-- the picker edits live; everything picked while it's open is one undo step.
+	const function openPicker(anchor: GuiObject)
+		const list = objects()
+		if #list == 0 then
+			return
+		end
+		const which = target() :: Target
+		const start = current() or Color3.new(1, 1, 1)
+		const finish = Undo.begin("Pick color")
+		ColorPicker.open({
+			value = `#{string.upper(start:ToHex())}`,
+			anchor = anchor,
+			onChange = function(hex)
+				const ok, color = pcall(Color3.fromHex, string.gsub(hex, "#", ""))
+				if ok then
+					for _, object in list do
+						if object.Parent then
+							write(object, which, color)
+						end
+					end
+				end
+			end,
+			onClose = finish,
+		})
+	end
+
 	const rows = {}
 	for rowIndex, row in SWATCHES do
 		const cells = {}
@@ -207,15 +235,38 @@ const function ColorPanel(context: Tool.Context): GuiObject
 		}),
 		rows,
 		Layout.row("Hex", 4, {
-			new("Frame")({
-				Name = "Preview",
-				Size = UDim2.fromOffset(Theme.CONTROL_HEIGHT, Theme.CONTROL_HEIGHT),
-				BackgroundColor3 = function()
-					return current() or Theme.INPUT
-				end,
-				Theme.corner(Theme.CONTROL_RADIUS),
-				Theme.stroke(Theme.BORDER),
-			}),
+			(function()
+				local button: TextButton
+				const hovered = source(false)
+				button = new("TextButton")({
+					Name = "Preview",
+					Size = UDim2.fromOffset(Theme.CONTROL_HEIGHT, Theme.CONTROL_HEIGHT),
+					BackgroundColor3 = function()
+						return current() or Theme.INPUT
+					end,
+					AutoButtonColor = false,
+					Text = "",
+					MouseEnter = function()
+						hovered(true)
+					end,
+					MouseLeave = function()
+						hovered(false)
+					end,
+					Activated = function()
+						openPicker(button)
+					end,
+					Theme.corner(Theme.CONTROL_RADIUS),
+					new("UIStroke")({
+						Color = function()
+							return if hovered() then Theme.TEXT else Theme.BORDER
+						end,
+						Thickness = 1,
+						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+					}),
+				}) :: TextButton
+				Overlay.tooltip(button, "Open the color picker")
+				return button
+			end)(),
 			TextInput({
 				name = "Hex",
 				placeholder = "#ffffff",

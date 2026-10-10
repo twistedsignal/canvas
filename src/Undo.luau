@@ -17,4 +17,20 @@ function Undo.record(name: string, edit: () -> ())
 	end
 end
 
+-- starts a recording that stays open across many changes, like dragging in a color picker.
+-- call the returned function once to commit it.
+function Undo.begin(name: string): () -> ()
+	const id = ChangeHistoryService:TryBeginRecording(`Canvas: {name}`)
+	local finished = false
+	return function()
+		if finished then
+			return
+		end
+		finished = true
+		if id then
+			ChangeHistoryService:FinishRecording(id, Enum.FinishRecordingOperation.Commit)
+		end
+	end
+end
+
 return Undo

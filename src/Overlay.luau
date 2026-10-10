@@ -26,6 +26,74 @@ function Overlay.layer(): Frame
 	return layer
 end
 
+-- converts an absolute screen position into overlay space.
+function Overlay.toLocal(position: Vector2): Vector2
+	return position - Overlay.layer().AbsolutePosition
+end
+
+-- popups open right now. while any is open, clicks belong to Canvas, so the selection guard
+-- keeps the selection (see SelectionState).
+local openPopups = 0
+
+function Overlay.hasPopup(): boolean
+	return openPopups > 0
+end
+
+-- mounts a popup above everything else. returns a function that removes it.
+function Overlay.mount(component: (close: () -> ()) -> GuiObject): () -> ()
+	local closed = false
+	local destroyRoot: (() -> ())? = nil
+	openPopups += 1
+	const function close()
+		if closed then
+			return
+		end
+		closed = true
+		openPopups -= 1
+		if destroyRoot then
+			destroyRoot()
+		end
+	end
+	destroyRoot = vide.root(function()
+		const instance = component(close)
+		instance.Parent = Overlay.layer()
+		vide.cleanup(instance)
+	end)
+	if closed and destroyRoot then
+		destroyRoot()
+	end
+	return close
+end
+
+-- keeps a popup attached to the control that opened it, which moves while the window animates.
+-- returns the control's overlay-space position and closes the popup once the control is removed.
+-- call inside Overlay.mount.
+function Overlay.anchor(target: GuiObject, close: () -> ()): () -> Vector2
+	const position = vide.source(Overlay.toLocal(target.AbsolutePosition))
+	vide.cleanup(target:GetPropertyChangedSignal("AbsolutePosition"):Connect(function()
+		position(Overlay.toLocal(target.AbsolutePosition))
+	end))
+	vide.cleanup(target.AncestryChanged:Connect(function()
+		if not target:IsDescendantOf(game) then
+			close()
+		end
+	end))
+	return position
+end
+
+-- full-size click catcher behind a popup; clicking it closes the popup.
+function Overlay.dismissLayer(onDismiss: () -> ()): TextButton
+	return new("TextButton")({
+		Name = "Dismiss",
+		Size = UDim2.fromScale(1, 1),
+		BackgroundTransparency = 1,
+		Text = "",
+		AutoButtonColor = false,
+		ZIndex = Theme.OVERLAY_Z,
+		Activated = onDismiss,
+	}) :: TextButton
+end
+
 -- tracks the mouse until the button is released, even when it leaves the dragged control.
 -- positions are in screen space.
 function Overlay.drag(press: InputObject, onMove: (position: Vector2) -> (), onEnd: (() -> ())?)

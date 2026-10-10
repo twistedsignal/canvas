@@ -20,7 +20,7 @@ To move the window, drag its header, or the **::** grip in the Modern theme. Whe
 
 The new instance keeps every saved property both classes share, plus its name, children, attributes and tags. Scripts keep their source. ObjectValues, NextSelection properties and constraint parts that pointed at the old instance get repointed, but only inside the same ScreenGui or model. To reclass Parts or Scripts, set **Show** to Always first, since the window hides when no UI is selected.
 
-**Color & Style.** Sets the fill, the text or image color, or the stroke color from swatches or a hex code. It also copies one object's fill, corner, stroke and text style and pastes it onto others.
+**Color & Style.** Sets the fill, the text or image color, or the stroke color from swatches or a hex code. Click the color square next to the hex code for a full picker, ported from Prism, with a hue bar, hex and RGB fields and recent colors. Colors apply live while you drag, and Ctrl+Z undoes the whole pick in one step. It also copies one object's fill, corner, stroke and text style and pastes it onto others.
 
 Ctrl+Z undoes any of these edits. The toolbar button turns Canvas on and off.
 
