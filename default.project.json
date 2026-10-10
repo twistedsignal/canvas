@@ -1,0 +1,9 @@
+{
+    "name": "Canvas",
+    "tree": {
+        "$path": "src",
+        "Packages": {
+            "$path": "Packages"
+        }
+    }
+}
