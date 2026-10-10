@@ -1,7 +1,6 @@
 -- selene: allow(mixed_table)
 -- browse Builder Icons. clicking one applies it to the selected text objects, or inserts a new
 -- icon label into the selection.
-const Selection = game:GetService("Selection")
 const vide = require("../vide")
 const Theme = require("../Theme")
 const Icons = require("../Icons")
@@ -90,7 +89,7 @@ const function IconsPanel(context: Tool.Context): GuiObject
 			label.TextSize = iconSize
 			label.TextColor3 = Color3.new(1, 1, 1)
 			label.Parent = parent
-			Selection:Set({ label })
+			context.selection.set({ label })
 		end)
 	end
 

@@ -321,7 +321,6 @@ const function Island(props: Props): CanvasGroup
 		Name = "Island",
 		BackgroundColor3 = Theme.BAR,
 		BorderSizePixel = 0,
-		-- sink clicks so they don't reach the 3D viewport behind it.
 		Active = true,
 		Visible = false,
 		GroupTransparency = 1,
@@ -435,6 +434,34 @@ const function Island(props: Props): CanvasGroup
 	end)
 
 	cleanup(root:GetPropertyChangedSignal("AbsoluteSize"):Connect(retarget))
+
+	-- clicks on the window also reach Studio's select tool behind it. tell the selection to undo
+	-- changes while the pointer is over the window: it's inside the window's bounds, it moved over
+	-- the window a moment ago (in case the mouse location is off), or the window is being dragged.
+	local pointerAt = 0
+	const function touch()
+		pointerAt = os.clock()
+	end
+	cleanup(island.MouseEnter:Connect(touch))
+	cleanup(island.InputBegan:Connect(touch))
+	cleanup(island.InputChanged:Connect(touch))
+	cleanup(island.MouseLeave:Connect(function()
+		pointerAt = 0
+	end))
+	props.context.selection.setGuard(function()
+		if dragging then
+			return true
+		end
+		if not island.Visible then
+			return false
+		end
+		const mouse = UserInputService:GetMouseLocation()
+		const from, to = island.AbsolutePosition, island.AbsolutePosition + island.AbsoluteSize
+		if mouse.X >= from.X and mouse.X <= to.X and mouse.Y >= from.Y and mouse.Y <= to.Y then
+			return true
+		end
+		return os.clock() - pointerAt < 1
+	end)
 
 	cleanup(UserInputService.InputBegan:Connect(function(input)
 		if input.KeyCode == Enum.KeyCode.Escape and active() then
