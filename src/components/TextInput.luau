@@ -12,7 +12,9 @@ export type Props = {
 	-- fires on every keystroke.
 	changed: ((text: string) -> ())?,
 	-- fires on Enter or when focus leaves.
-	commit: ((text: string) -> ())?,
+	commit: ((text: string, enterPressed: boolean) -> ())?,
+	-- hands over the TextBox, for panels that edit it while it's focused.
+	box: ((TextBox) -> ())?,
 	mono: boolean?,
 	editable: boolean?,
 	size: UDim2?,
@@ -44,13 +46,16 @@ const function TextInput(props: Props): Frame
 		Focused = function()
 			focused(true)
 		end,
-		FocusLost = function()
+		FocusLost = function(enterPressed: boolean)
 			focused(false)
 			if props.commit then
-				props.commit(box.Text)
+				props.commit(box.Text, enterPressed)
 			end
 		end,
 	}) :: TextBox
+	if props.box then
+		props.box(box)
+	end
 	if props.changed then
 		const changed = props.changed
 		vide.cleanup(box:GetPropertyChangedSignal("Text"):Connect(function()

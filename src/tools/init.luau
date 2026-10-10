@@ -6,5 +6,6 @@ return table.freeze({
 	require("@self/ScaleOffset"),
 	require("@self/LayoutPanel"),
 	require("@self/ColorPanel"),
+	require("@self/ReclassPanel"),
 	require("@self/SettingsPanel"),
 }) :: { Tool.Tool }

@@ -1,6 +1,6 @@
 -- selene: allow(mixed_table)
--- browse Builder Icons. clicking one applies it to the selected text objects, or inserts a new
--- icon label into the selection.
+-- browse Builder Icons. clicking one adds it to the selected text objects as RichText, so icons
+-- and text can mix, or inserts a new icon label into the selection.
 const vide = require("../vide")
 const Theme = require("../Theme")
 const Icons = require("../Icons")
@@ -14,20 +14,36 @@ const Layout = require("../components/Layout")
 const new = vide.create
 const source = vide.source
 
-const SIZE = Vector2.new(352, 330)
+const SIZE = Vector2.new(352, 362)
 const CELL = 36
 const GAP = 4
 const COLUMNS = 8
-const GRID_TOP = 34
+const GRID_TOP = 66
 const GRID_HEIGHT = 222
+-- the font for text around icons in labels Canvas creates or converts.
+const TEXT_FONT = Font.new("rbxasset://fonts/families/BuilderSans.json")
 
 const function isText(instance: Instance): boolean
 	return instance:IsA("TextLabel") or instance:IsA("TextButton") or instance:IsA("TextBox")
 end
 
+-- the icon a text object shows: from its RichText, or from its whole font for labels set up
+-- with the icon font directly.
+const function iconOf(text: TextLabel): (string?, BuilderIcons.Variant?)
+	const whole = BuilderIcons.variantOf(text.FontFace)
+	if whole then
+		return text.Text, whole
+	end
+	if text.RichText then
+		return BuilderIcons.find(text.Text)
+	end
+	return nil, nil
+end
+
 const function IconsPanel(context: Tool.Context): GuiObject
 	const query = source("")
 	const variant = source("Regular")
+	const placement = source("swap")
 	const picked = source("")
 	const hovered = source("")
 	const results = vide.derive(function()
@@ -37,22 +53,48 @@ const function IconsPanel(context: Tool.Context): GuiObject
 		return BuilderIcons.font(variant() :: BuilderIcons.Variant)
 	end
 
-	-- show the icon a selected text object already uses.
+	-- when a different text object is selected, show the icon it already uses. only on a new
+	-- target, so it doesn't undo a Regular/Filled choice made since.
+	local synced: Instance? = nil
 	vide.effect(function()
+		local first: TextLabel? = nil
 		for _, target in context.selection.ui() do
 			if isText(target) then
-				const text = target :: TextLabel
-				const used = BuilderIcons.variantOf(text.FontFace)
-				if used then
-					vide.untrack(function()
-						picked(text.Text)
-						variant(used)
-					end)
-				end
-				return
+				first = target :: TextLabel
+				break
 			end
 		end
+		if first == synced then
+			return
+		end
+		synced = first
+		if not first then
+			return
+		end
+		const name, used = iconOf(first)
+		if name and used then
+			vide.untrack(function()
+				picked(name)
+				variant(used)
+			end)
+		end
 	end)
+
+	-- the new RichText for a text object with the icon placed in it.
+	const function withIcon(text: TextLabel, markup: string): string
+		local current: string
+		const whole = BuilderIcons.variantOf(text.FontFace)
+		if whole then
+			-- the whole label used the icon font; turn its icon into markup and use a text font.
+			text.FontFace = TEXT_FONT
+			current = BuilderIcons.markup(text.Text, whole)
+		elseif text.RichText then
+			current = text.Text
+		else
+			current = BuilderIcons.escape(text.Text)
+		end
+		return BuilderIcons.place(current, markup, placement() :: BuilderIcons.Placement)
+	end
 
 	const function apply(name: string)
 		picked(name)
@@ -63,14 +105,14 @@ const function IconsPanel(context: Tool.Context): GuiObject
 				table.insert(texts, target)
 			end
 		end
-		const face = font()
+		const markup = BuilderIcons.markup(name, variant() :: BuilderIcons.Variant)
 		const iconSize = context.settings.number("iconSize")
 		if #texts > 0 then
-			Undo.record("Apply icon", function()
+			Undo.record("Add icon", function()
 				for _, target in texts do
 					const text = target :: TextLabel
-					text.FontFace = face
-					text.Text = name
+					text.Text = withIcon(text, markup)
+					text.RichText = true
 				end
 			end)
 			return
@@ -84,8 +126,9 @@ const function IconsPanel(context: Tool.Context): GuiObject
 			label.Name = name
 			label.Size = UDim2.fromOffset(iconSize, iconSize)
 			label.BackgroundTransparency = 1
-			label.FontFace = face
-			label.Text = name
+			label.FontFace = TEXT_FONT
+			label.RichText = true
+			label.Text = markup
 			label.TextSize = iconSize
 			label.TextColor3 = Color3.new(1, 1, 1)
 			label.Parent = parent
@@ -203,7 +246,7 @@ const function IconsPanel(context: Tool.Context): GuiObject
 			end
 		end
 		const action = if texts > 0
-			then `Click to apply to {texts} text object{if texts == 1 then "" else "s"}`
+			then `Click to add to {texts} text object{if texts == 1 then "" else "s"}`
 			else `Click to insert into {if targets[1] then targets[1].Name else "the selection"}`
 		return `{count} icon{if count == 1 then "" else "s"} · {action}`
 	end
@@ -228,6 +271,19 @@ const function IconsPanel(context: Tool.Context): GuiObject
 				Size = UDim2.fromOffset(120, Theme.CONTROL_HEIGHT),
 				BackgroundTransparency = 1,
 				Segmented({ options = { "Regular", "Filled" }, value = variant }),
+			}),
+			new("Frame")({
+				Name = "Placement",
+				Position = UDim2.fromOffset(0, 32),
+				Size = UDim2.new(1, 0, 0, Theme.CONTROL_HEIGHT),
+				BackgroundTransparency = 1,
+				Layout.row("In text", 0, {
+					Segmented({
+						options = { "swap", "start", "end" },
+						labels = { "Swap icon", "Add at start", "Add at end" },
+						value = placement,
+					}),
+				}),
 			}),
 			scroller,
 			TextInput({

@@ -22,3 +22,26 @@ end
 assert(#BuilderIcons.search("definitely-not-an-icon") == 0, "no matches")
 
 print("builder-icons: ok")
+
+-- RichText markup: icons mix with text, and swapping replaces only the icons.
+local house = BuilderIcons.markup("house", "Regular")
+local filledStar = BuilderIcons.markup("star", "Filled")
+assert(string.find(house, BuilderIcons.FAMILY, 1, true) and string.find(house, 'weight="400">house</font>', 1, true), "regular markup")
+assert(string.find(filledStar, 'weight="700">star</font>', 1, true), "filled markup")
+
+local name, variant = BuilderIcons.find(`Go {house} home`)
+assert(name == "house" and variant == "Regular", "find regular")
+name, variant = BuilderIcons.find(filledStar)
+assert(name == "star" and variant == "Filled", "find filled")
+assert(BuilderIcons.find("<b>plain</b>") == nil, "no icon")
+
+assert(BuilderIcons.place("", house, "swap") == house, "empty text gets the icon")
+assert(BuilderIcons.place("Home", house, "swap") == `{house} Home`, "swap with no icon adds at the start")
+assert(BuilderIcons.place(`{house} Home`, filledStar, "swap") == `{filledStar} Home`, "swap replaces the icon, keeps the text")
+assert(BuilderIcons.place(`{house} and {house}`, filledStar, "swap") == `{filledStar} and {filledStar}`, "swap replaces every icon")
+assert(BuilderIcons.place("Home", house, "start") == `{house} Home`, "start")
+assert(BuilderIcons.place("Home", house, "end") == `Home {house}`, "end")
+assert(BuilderIcons.place(`{house} Home`, filledStar, "end") == `{house} Home {filledStar}`, "end keeps existing icons")
+assert(BuilderIcons.escape("a < b & c > d") == "a &lt; b &amp; c &gt; d", "escape")
+
+print("builder-icons markup: ok")

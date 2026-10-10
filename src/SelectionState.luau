@@ -12,6 +12,8 @@ export type SelectionState = {
 	ui: () -> { GuiBase2d },
 	-- just the GuiObjects, for edits to Position, Size, colors and so on.
 	objects: () -> { GuiObject },
+	-- everything selected, UI or not.
+	all: () -> { Instance },
 	-- changes the selection on purpose, even while the pointer is over Canvas.
 	set: (instances: { Instance }) -> (),
 	-- returns true while selection changes should be reverted.
@@ -52,15 +54,24 @@ const SelectionState = {}
 -- call inside a vide scope; the connection is cleaned up with it.
 function SelectionState.create(): SelectionState
 	const ui = vide.source({} :: { GuiBase2d })
+	const all = vide.source({} :: { Instance })
 	local guard: () -> boolean = function()
 		return false
 	end
 	-- the selection as Canvas last accepted it, to restore after a stray click.
 	local accepted: { Instance } = Selection:Get()
+	local initialized = false
+	-- set by set(): the next change is Canvas's own, so the guard lets it through.
+	local intended = false
 
 	const function refresh()
 		const current = Selection:Get()
-		if guard() and not same(current, accepted) then
+		-- restoring a stray click fires SelectionChanged with the same selection. skip it, so
+		-- panels don't reset state they sync from the selection.
+		if initialized and same(current, accepted) then
+			return
+		end
+		if guard() and not intended then
 			const restore = {}
 			for _, instance in accepted do
 				if instance.Parent then
@@ -72,6 +83,9 @@ function SelectionState.create(): SelectionState
 			return
 		end
 		accepted = current
+		initialized = true
+		intended = false
+		all(current)
 		const list, seen = {}, {}
 		for _, instance in current do
 			const target = resolve(instance)
@@ -98,9 +112,13 @@ function SelectionState.create(): SelectionState
 	return {
 		ui = ui,
 		objects = objects,
+		all = all,
 		set = function(instances)
-			accepted = instances
-			Selection:Set(instances)
+			-- an unchanged selection fires no event, which would leave the flag set.
+			if not same(instances, accepted) then
+				intended = true
+				Selection:Set(instances)
+			end
 		end,
 		setGuard = function(next)
 			guard = next

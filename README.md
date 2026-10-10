@@ -10,9 +10,10 @@ Drag the header (Classic) or the **::** grip (Modern) to move it. When you let g
 
 ## Tools
 
-- **Builder Icons** lists every icon in Roblox's built-in Builder Icons font, with search and Regular or Filled styles. Click an icon to apply it to the selected TextLabels, TextButtons or TextBoxes. If none are selected, it inserts a new icon label into the selection instead. The name field shows the icon's name so you can copy it for scripts.
+- **Builder Icons** lists every icon in Roblox's built-in Builder Icons font, with search and Regular or Filled styles. Clicking an icon adds it to the selected TextLabels, TextButtons or TextBoxes as RichText, so icons and text can share a label. **In text** chooses whether the icon swaps the label's existing icon, or is added at the start or the end. With no text object selected, it inserts a new icon label into the selection. The name field shows the icon's name so you can copy it for scripts.
 - **Scale ↔ Offset** converts Position, Size or both to Scale or to Offset, on X, Y or both, without moving anything. It accounts for the parent's UIPadding and any UIScale.
 - **Layout** adds or removes UICorner, UIStroke, UIPadding, UIListLayout, UIGridLayout and UIAspectRatioConstraint in one click. It also sets AnchorPoint without moving the object, and has center, fill and AutomaticSize shortcuts.
+- **Reclass** turns the selection into another class, like a TextLabel into an ImageLabel. Type a class name for autocomplete; Tab completes and Enter reclasses. Every suggestion shows its Explorer icon and how many properties carry over. The new instance keeps the shared properties, children, attributes and tags. References to it, like ObjectValues or NextSelection properties in the same ScreenGui or model, point to the new instance. Scripts keep their source.
 - **Color & Style** sets fill, text or image, and stroke colors from swatches or a hex code. It can also copy one object's style (fill, corner, stroke and text) and paste it onto others.
 
 Every edit can be undone with Ctrl+Z. The toolbar button turns Canvas on or off.

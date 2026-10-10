@@ -26,5 +26,6 @@ return table.freeze({
 	search = "rbxassetid://86764350898468", -- search, Decal 71880663641003
 	close = "rbxassetid://120346817272595", -- x, Decal 107802524228377
 	copy = "rbxassetid://95202810420211", -- copy, Decal 76068427496061
+	reclass = "rbxassetid://86007077018759", -- replace, Decal 132148502322571
 	settings = "rbxassetid://97883459364638", -- cog, Decal 118786212222120 (shared with Photon and Prism)
 })

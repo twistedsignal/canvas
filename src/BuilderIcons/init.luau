@@ -23,6 +23,51 @@ function BuilderIcons.variantOf(font: Font): Variant?
 	return if font.Weight == Enum.FontWeight.Bold then "Filled" else "Regular"
 end
 
+export type Placement = "swap" | "start" | "end"
+
+local WEIGHTS = { Regular = "400", Filled = "700" }
+-- the family path with Lua pattern characters escaped.
+local FAMILY_PATTERN = string.gsub(FAMILY, "%W", "%%%0")
+local TAG_PATTERN = `<font family="{FAMILY_PATTERN}" weight="(%w+)">([%w%-_]+)</font>`
+
+-- RichText for one icon. it only changes the font around the icon's name, so it can sit in the
+-- middle of ordinary text.
+function BuilderIcons.markup(name: string, variant: Variant): string
+	return `<font family="{FAMILY}" weight="{WEIGHTS[variant] or WEIGHTS.Regular}">{name}</font>`
+end
+
+-- the first icon in a RichText string, if any.
+function BuilderIcons.find(text: string): (string?, Variant?)
+	local weight, name = string.match(text, TAG_PATTERN)
+	if not name then
+		return nil, nil
+	end
+	return name, if weight == "700" or string.lower(weight) == "bold" then "Filled" else "Regular"
+end
+
+-- escapes plain text so it reads the same once RichText is turned on.
+function BuilderIcons.escape(text: string): string
+	return (string.gsub(string.gsub(string.gsub(text, "&", "&amp;"), "<", "&lt;"), ">", "&gt;"))
+end
+
+-- puts an icon into RichText. "swap" replaces the icons already there, or adds it at the start
+-- when there are none; "start" and "end" add it next to the existing text.
+function BuilderIcons.place(text: string, markup: string, placement: Placement): string
+	if placement == "swap" then
+		local swapped, count = string.gsub(text, TAG_PATTERN, function()
+			return markup
+		end)
+		if count > 0 then
+			return swapped
+		end
+		placement = "start"
+	end
+	if text == "" then
+		return markup
+	end
+	return if placement == "start" then `{markup} {text}` else `{text} {markup}`
+end
+
 -- names that contain every word of the query, best matches first: exact, then prefix, then names
 -- whose words start with the query's words, then anything else.
 function BuilderIcons.search(query: string): { string }
